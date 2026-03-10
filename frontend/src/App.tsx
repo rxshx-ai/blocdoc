@@ -779,6 +779,29 @@ function App() {
                     <svg className="route-line" viewBox="0 0 100 100" preserveAspectRatio="none">
                       <line x1={pickupPoint.x} y1={pickupPoint.y} x2={deliveryPoint.x} y2={deliveryPoint.y} />
                     </svg>
+                    {/* Animated truck — interpolates between P and D */}
+                    <div
+                      className="canvas-truck"
+                      style={{
+                        left: selectedShipment?.status === 'IN_TRANSIT'
+                          ? `${(pickupPoint.x + deliveryPoint.x) / 2}%`
+                          : selectedShipment?.status === 'DELIVERED'
+                            ? `${deliveryPoint.x}%`
+                            : `${pickupPoint.x}%`,
+                        top: selectedShipment?.status === 'IN_TRANSIT'
+                          ? `${(pickupPoint.y + deliveryPoint.y) / 2}%`
+                          : selectedShipment?.status === 'DELIVERED'
+                            ? `${deliveryPoint.y}%`
+                            : `${pickupPoint.y}%`,
+                      }}
+                    >
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                        <rect x="1" y="8" width="15" height="10" rx="2" fill="rgba(59,130,246,0.3)" stroke="#3b82f6" strokeWidth="1.5" />
+                        <path d="M16 11h4l2 3v4h-6V11z" fill="rgba(59,130,246,0.2)" stroke="#3b82f6" strokeWidth="1.5" />
+                        <circle cx="5.5" cy="18.5" r="1.5" fill="#3b82f6" />
+                        <circle cx="18.5" cy="18.5" r="1.5" fill="#3b82f6" />
+                      </svg>
+                    </div>
                     <div className="canvas-point pickup" style={{ left: `${pickupPoint.x}%`, top: `${pickupPoint.y}%` }}>P</div>
                     <div className="canvas-point delivery" style={{ left: `${deliveryPoint.x}%`, top: `${deliveryPoint.y}%` }}>D</div>
                   </>
@@ -831,14 +854,18 @@ function App() {
                 >
                   <div>
                     <strong>{shipment.shipment_id}</strong>
-                    <span>{shipment.cargo_type}</span>
+                    <span className="status-pill status-CREATED" style={{ display: 'none' }} />
+                    <span className={`status-pill status-${shipment.status}`}>{shipment.status.replace(/_/g, ' ')}</span>
                   </div>
                   <div>
-                    <strong>{shipment.status}</strong>
-                    <span>{shipment.pickup_location}</span>
+                    <strong style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{shipment.cargo_type}</strong>
+                    <span>🌡 {shipment.temperature_requirement}°C</span>
                   </div>
                   <div>
-                    <strong>{shipment.delivery_location}</strong>
+                    <strong style={{ fontSize: '0.82rem' }}>{shipment.pickup_location}</strong>
+                    <span>→ {shipment.delivery_location}</span>
+                  </div>
+                  <div>
                     <span>{formatDate(shipment.pickup_time)}</span>
                   </div>
                 </button>
