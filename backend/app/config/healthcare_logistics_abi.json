@@ -1,0 +1,61 @@
+[
+  {
+    "inputs": [
+      {"internalType": "string", "name": "shipmentId", "type": "string"},
+      {"internalType": "string", "name": "pickupLocation", "type": "string"},
+      {"internalType": "string", "name": "deliveryLocation", "type": "string"},
+      {"internalType": "string", "name": "cargoType", "type": "string"},
+      {"internalType": "int256", "name": "temperatureRequirement", "type": "int256"}
+    ],
+    "name": "createShipment",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "string", "name": "shipmentId", "type": "string"},
+      {"internalType": "uint256", "name": "price", "type": "uint256"},
+      {"internalType": "uint256", "name": "estimatedDeliveryTime", "type": "uint256"},
+      {"internalType": "string", "name": "vehicleType", "type": "string"}
+    ],
+    "name": "submitBid",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "string", "name": "shipmentId", "type": "string"},
+      {"internalType": "address", "name": "providerAddress", "type": "address"}
+    ],
+    "name": "selectProvider",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "string", "name": "shipmentId", "type": "string"}],
+    "name": "verifyPickup",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "string", "name": "shipmentId", "type": "string"}],
+    "name": "confirmDelivery",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "string", "name": "shipmentId", "type": "string"},
+      {"internalType": "string", "name": "telemetryHash", "type": "string"}
+    ],
+    "name": "logTelemetryHash",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Healthcare Logistics RBAC Login</title>
+  <style>
+    :root {
+      --bg: #f8f7f2;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --accent: #0f766e;
+      --warn: #b45309;
+      --danger: #b91c1c;
+      --border: #e5e7eb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 0% 0%, #d1fae5 0%, transparent 34%),
+        radial-gradient(circle at 100% 100%, #fde68a 0%, transparent 30%),
+        var(--bg);
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 18px; }
+    .head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    h1 { margin: 0; font-size: 1.7rem; }
+    .muted { color: var(--muted); }
+    .pill { padding: 6px 10px; border-radius: 999px; font-size: 0.8rem; background:#e5e7eb; }
+    .ok { background: #bbf7d0; }
+    .row { display:grid; grid-template-columns: 360px 1fr; gap: 12px; margin-top: 14px; }
+    .card { background: var(--panel); border:1px solid var(--border); border-radius: 12px; padding: 12px; }
+    .card h3 { margin: 0 0 8px; }
+    label { display:block; font-size:0.82rem; color:var(--muted); margin:8px 0 4px; }
+    input, select, button {
+      width:100%;
+      padding:8px;
+      border:1px solid #d1d5db;
+      border-radius:8px;
+      font:inherit;
+      background:#fff;
+    }
+    button {
+      border:none;
+      font-weight:600;
+      cursor:pointer;
+      color:#fff;
+      background:var(--accent);
+      margin-top:10px;
+    }
+    button.warn { background: var(--warn); }
+    button.danger { background: var(--danger); }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:12px; }
+    .split { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .out {
+      margin-top: 8px;
+      border-radius: 8px;
+      background: #111827;
+      color: #e5e7eb;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      padding: 10px;
+      white-space: pre-wrap;
+      max-height: 220px;
+      overflow: auto;
+    }
+    .hidden { display:none !important; }
+    @media (max-width: 920px) { .row { grid-template-columns: 1fr; } .split { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <div>
+        <h1>Role-Based Login + Admin Console</h1>
+        <div class="muted">Login by role, operate shipments, and manage users as admin.</div>
+      </div>
+      <div id="sessionBadge" class="pill">Not logged in</div>
+    </div>
+
+    <div class="row">
+      <div class="card" id="loginCard">
+        <h3>Login</h3>
+        <label>Username</label>
+        <input id="username" placeholder="admin" value="admin" />
+        <label>Password</label>
+        <input id="password" type="password" placeholder="admin123" value="admin123" />
+        <button onclick="login()">Login</button>
+        <button class="danger hidden" id="logoutBtn" onclick="logout()">Logout</button>
+        <div class="out" id="authOut"></div>
+
+        <div class="card hidden" id="adminPanel" style="margin-top:10px;">
+          <h3>Admin: Create User</h3>
+          <label>New Username</label><input id="new_user" placeholder="provider-ops" />
+          <label>Password</label><input id="new_pass" placeholder="secure123" />
+          <label>Role</label>
+          <select id="new_role">
+            <option value="shipper">shipper</option>
+            <option value="provider">provider</option>
+            <option value="driver">driver</option>
+            <option value="receiver">receiver</option>
+            <option value="admin">admin</option>
+          </select>
+          <label>Actor ID</label><input id="new_actor" placeholder="provider-002" />
+          <button class="warn" onclick="createUser()">Create User</button>
+          <button class="warn" onclick="listUsers()">List Users</button>
+          <div class="out" id="adminOut"></div>
+        </div>
+      </div>
+
+      <div class="grid" id="opsGrid">
+        <div class="card">
+          <h3>Create Shipment (shipper/admin)</h3>
+          <div class="split">
+            <div><label>Shipment ID</label><input id="cs_id" value="SHP-UI-001" /></div>
+            <div><label>Cargo</label><input id="cs_cargo" value="Vaccines" /></div>
+          </div>
+          <div class="split">
+            <div><label>Pickup</label><input id="cs_pick" value="Hospital A" /></div>
+            <div><label>Delivery</label><input id="cs_del" value="Clinic B" /></div>
+          </div>
+          <div class="split">
+            <div><label>Pickup Lat</label><input id="cs_plat" value="12.9716" /></div>
+            <div><label>Pickup Lon</label><input id="cs_plon" value="77.5946" /></div>
+          </div>
+          <div class="split">
+            <div><label>Delivery Lat</label><input id="cs_dlat" value="12.9717" /></div>
+            <div><label>Delivery Lon</label><input id="cs_dlon" value="77.5948" /></div>
+          </div>
+          <button onclick="createShipment()">Create Shipment</button>
+          <div class="out" id="cs_out"></div>
+        </div>
+
+        <div class="card">
+          <h3>Bid Job (provider/admin)</h3>
+          <div class="split">
+            <div><label>Shipment ID</label><input id="bid_sid" value="SHP-UI-001" /></div>
+            <div><label>Provider ID</label><input id="bid_pid" value="provider-001" /></div>
+          </div>
+          <div class="split">
+            <div><label>Provider Address</label><input id="bid_addr" value="0x70997970C51812dc3A010C7d01b50e0d17dc79C8" /></div>
+            <div><label>Driver ID</label><input id="bid_driver" value="driver-001" /></div>
+          </div>
+          <div class="split">
+            <div><label>Price</label><input id="bid_price" value="100000" /></div>
+            <div><label>ETA (sec)</label><input id="bid_eta" value="3600" /></div>
+          </div>
+          <label>Vehicle Type</label><input id="bid_vehicle" value="Refrigerated Van" />
+          <button onclick="submitBid()">Submit Bid</button>
+          <div class="out" id="bid_out"></div>
+        </div>
+
+        <div class="card">
+          <h3>Select Provider (shipper/admin)</h3>
+          <label>Shipment ID</label><input id="sel_sid" value="SHP-UI-001" />
+          <button onclick="selectProvider()">Run Selection</button>
+          <div class="out" id="sel_out"></div>
+        </div>
+
+        <div class="card">
+          <h3>Driver Fulfillment (driver/admin)</h3>
+          <div class="split">
+            <div><label>Shipment ID</label><input id="drv_sid" value="SHP-UI-001" /></div>
+            <div><label>Driver ID</label><input id="drv_id" value="driver-001" /></div>
+          </div>
+          <div class="split">
+            <div><label>Latitude</label><input id="drv_lat" value="12.9716" /></div>
+            <div><label>Longitude</label><input id="drv_lon" value="77.5946" /></div>
+          </div>
+          <button class="warn" onclick="arrivePickup()">Arrive Pickup</button>
+          <button class="warn" onclick="verifyPickup()">Verify Pickup QR</button>
+          <button class="warn" onclick="arriveDelivery()">Arrive Delivery</button>
+          <button class="warn" onclick="verifyDelivery()">Verify Delivery QR</button>
+          <div class="out" id="drv_out"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+let token = localStorage.getItem("rbac_token") || "";
+let role = localStorage.getItem("rbac_role") || "";
+let actorId = localStorage.getItem("rbac_actor") || "";
+let pickupQR = null;
+let deliveryQR = null;
+
+function setOut(id, value) {
+  document.getElementById(id).textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+}
+
+function baseHeaders() {
+  const h = { "Content-Type": "application/json" };
+  if (token) h["Authorization"] = `Bearer ${token}`;
+  if (role) h["X-Role"] = role;
+  if (actorId) h["X-Actor-Id"] = actorId;
+  return h;
+}
+
+async function callApi(method, path, body, outId) {
+  setOut(outId, "Loading...");
+  const res = await fetch(path, {
+    method,
+    headers: baseHeaders(),
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = text; }
+  setOut(outId, data);
+  if (!res.ok) throw new Error((data && data.detail) || text);
+  return data;
+}
+
+function refreshSessionBadge() {
+  const badge = document.getElementById("sessionBadge");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const adminPanel = document.getElementById("adminPanel");
+  if (!token) {
+    badge.className = "pill";
+    badge.textContent = "Not logged in";
+    logoutBtn.classList.add("hidden");
+    adminPanel.classList.add("hidden");
+    return;
+  }
+  badge.className = "pill ok";
+  badge.textContent = `Logged in: ${role}${actorId ? ` (${actorId})` : ""}`;
+  logoutBtn.classList.remove("hidden");
+  if (role === "admin") adminPanel.classList.remove("hidden");
+  else adminPanel.classList.add("hidden");
+}
+
+async function login() {
+  try {
+    const data = await callApi("POST", "/auth/login", {
+      username: document.getElementById("username").value,
+      password: document.getElementById("password").value,
+    }, "authOut");
+    token = data.access_token;
+    role = data.role;
+    actorId = data.actor_id || "";
+    localStorage.setItem("rbac_token", token);
+    localStorage.setItem("rbac_role", role);
+    localStorage.setItem("rbac_actor", actorId);
+    refreshSessionBadge();
+  } catch (e) {
+    setOut("authOut", `Error: ${e.message}`);
+  }
+}
+
+function logout() {
+  token = "";
+  role = "";
+  actorId = "";
+  localStorage.removeItem("rbac_token");
+  localStorage.removeItem("rbac_role");
+  localStorage.removeItem("rbac_actor");
+  refreshSessionBadge();
+  setOut("authOut", "Logged out");
+}
+
+async function listUsers() {
+  try { await callApi("GET", "/admin/users", null, "adminOut"); }
+  catch (e) { setOut("adminOut", `Error: ${e.message}`); }
+}
+
+async function createUser() {
+  try {
+    await callApi("POST", "/admin/users", {
+      username: document.getElementById("new_user").value,
+      password: document.getElementById("new_pass").value,
+      role: document.getElementById("new_role").value,
+      actor_id: document.getElementById("new_actor").value || null,
+    }, "adminOut");
+  } catch (e) {
+    setOut("adminOut", `Error: ${e.message}`);
+  }
+}
+
+function n(id) { return Number(document.getElementById(id).value); }
+function v(id) { return document.getElementById(id).value; }
+
+async function createShipment() {
+  await callApi("POST", "/shipment/create", {
+    shipment_id: v("cs_id"),
+    sender_entity: "PHARMACEUTICAL_MANUFACTURER",
+    receiver_entity: "HOSPITAL",
+    pickup_location: v("cs_pick"),
+    delivery_location: v("cs_del"),
+    pickup_latitude: n("cs_plat"),
+    pickup_longitude: n("cs_plon"),
+    delivery_latitude: n("cs_dlat"),
+    delivery_longitude: n("cs_dlon"),
+    cargo_type: v("cs_cargo"),
+    temperature_requirement: 4,
+    escrow_amount_wei: 0,
+  }, "cs_out");
+}
+
+async function submitBid() {
+  await callApi("POST", "/bid", {
+    shipment_id: v("bid_sid"),
+    provider_id: v("bid_pid"),
+    provider_address: v("bid_addr"),
+    price: n("bid_price"),
+    estimated_delivery_time: n("bid_eta"),
+    vehicle_type: v("bid_vehicle"),
+    driver_id: v("bid_driver"),
+  }, "bid_out");
+}
+
+async function selectProvider() {
+  await callApi("POST", "/shipment/select_provider", { shipment_id: v("sel_sid") }, "sel_out");
+}
+
+async function arrivePickup() {
+  const r = await callApi("POST", "/shipment/arrived_pickup", {
+    shipment_id: v("drv_sid"),
+    driver_id: v("drv_id"),
+    driver_latitude: n("drv_lat"),
+    driver_longitude: n("drv_lon"),
+  }, "drv_out");
+  pickupQR = r.qr_payload;
+}
+
+async function verifyPickup() {
+  if (!pickupQR) return setOut("drv_out", "Run Arrive Pickup first");
+  await callApi("POST", "/shipment/verify_pickup_qr", {
+    shipment_id: pickupQR.shipment_id,
+    pickup_location_hash: pickupQR.pickup_location_hash,
+    nonce: pickupQR.nonce,
+    expiration_time: pickupQR.expiration_time,
+    driver_id: v("drv_id"),
+    driver_latitude: n("drv_lat"),
+    driver_longitude: n("drv_lon"),
+  }, "drv_out");
+}
+
+async function arriveDelivery() {
+  const r = await callApi("POST", "/shipment/arrived_delivery", {
+    shipment_id: v("drv_sid"),
+    driver_id: v("drv_id"),
+    driver_latitude: n("drv_lat"),
+    driver_longitude: n("drv_lon"),
+  }, "drv_out");
+  deliveryQR = r.qr_payload;
+}
+
+async function verifyDelivery() {
+  if (!deliveryQR) return setOut("drv_out", "Run Arrive Delivery first");
+  await callApi("POST", "/shipment/verify_delivery_qr", {
+    shipment_id: deliveryQR.shipment_id,
+    delivery_location_hash: deliveryQR.delivery_location_hash,
+    nonce: deliveryQR.nonce,
+    expiration_time: deliveryQR.expiration_time,
+    driver_id: v("drv_id"),
+    driver_latitude: n("drv_lat"),
+    driver_longitude: n("drv_lon"),
+  }, "drv_out");
+}
+
+refreshSessionBadge();
+</script>
+</body>
+</html>
